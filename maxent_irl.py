@@ -114,15 +114,11 @@ def Find_badstate(start_x, start_y, goal_x, goal_y, policy, height, width, badst
     for i in range(width):
         for j in range(height):
             policy2[i,j] = np.argmax(policy[j+height*i])
-            
-            
-    #print policy2
-        
-                   
+
     iteration = 0
     next_x = 0
     next_y = 0
-    
+
     current_state = 0
     count = 0
     
@@ -142,18 +138,17 @@ def Find_badstate(start_x, start_y, goal_x, goal_y, policy, height, width, badst
         if current_state == int(badstate[0]):
             print 'count'
             count += 1
-        
+
         next_x = past_x + action_moveX(policy2[past_x, past_y], past_x)
         next_y = past_y + action_moveY(policy2[past_x, past_y], past_y)
-        
         #print 'next_x', next_x
         #print 'next_y', next_y
-        
+
         current_x = next_x
         current_y = next_y
-        
+
         current_state = width * current_x + current_y
-        
+
     return count
 
 def max_dir(policy):
@@ -183,6 +178,14 @@ def change_dir(policy):
         else:
             print pre_s,'s'
 
+def mod_feat_exp(feat_map,trajs):
+  feat_exp = np.zeros([feat_map.shape[1]])
+  for episode in trajs:
+    for step in episode:
+      feat_exp += feat_map[step.cur_state,:]
+  feat_exp = feat_exp/len(trajs)
+  return feat_exp
+
 def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
   """
   Maximum Entropy Inverse Reinforcement Learning (Maxent IRL)
@@ -198,7 +201,7 @@ def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
     n_iters     int - number of optimization steps
 
   returns
-    rewards     Nx1 vector - recoverred state rewards
+    rewards     Nx1 vector - recoverred state rewardsF
   """
   N_STATES, _, N_ACTIONS = np.shape(P_a)
 
@@ -209,6 +212,7 @@ def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
 
   # calc feature expectations
   feat_exp = np.zeros([feat_map.shape[1]])
+
   for episode in trajs:
     for step in episode:
       feat_exp += feat_map[step.cur_state,:]
@@ -231,10 +235,17 @@ def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
     # compute state visition frequences
     svf = compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=False)
 
+
+
+    #compute new feature_exp
+    new_trajs = [[Step(cur_state=0), Step(cur_state=7)],[Step(cur_state=0), Step(cur_state=7)]]
+    feat_exp = mod_feat_exp(feat_map,new_trajs)
+
+    print feat_exp
+
+
     # compute gradients
     grad = feat_exp - feat_map.T.dot(svf)
-
-    #print feat_exp
 
 
     # update params
