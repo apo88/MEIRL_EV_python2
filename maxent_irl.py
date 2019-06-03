@@ -26,7 +26,7 @@ H = 10
 W = 10
 
 def compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=True):
-  """compute the expected states visition frequency p(s| theta, T) 
+  """compute the expected states visition frequency p(s| theta, T)
   using dynamic programming
 
   inputs:
@@ -35,21 +35,21 @@ def compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=True):
     trajs   list of list of Steps - collected from expert
     policy  Nx1 vector (or NxN_ACTIONS if deterministic=False) - policy
 
-  
+
   returns:
     p       Nx1 vector - state visitation frequencies
   """
   N_STATES, _, N_ACTIONS = np.shape(P_a)
-  
+
 
   T = len(trajs[0])
   # mu[s, t] is the prob of visiting state s at time t
-  mu = np.zeros([N_STATES, T]) 
+  mu = np.zeros([N_STATES, T])
 
   for traj in trajs:
     mu[traj[0].cur_state, 0] += 1
 
-  
+
   mu[:,0] = mu[:,0]/len(trajs)
 
   for s in range(N_STATES):
@@ -58,12 +58,12 @@ def compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=True):
         mu[s, t+1] = sum([mu[pre_s, t]*P_a[pre_s, s, int(policy[pre_s])] for pre_s in range(N_STATES)])
       else:
         mu[s, t+1] = sum([sum([mu[pre_s, t]*P_a[pre_s, s, a1]*policy[pre_s, a1] for a1 in range(N_ACTIONS)]) for pre_s in range(N_STATES)])
-  
+
   p = np.sum(mu, 1)
   return p
 
 def action_moveX(action, x):
-  
+
     if action == 0:
         x = 1
         #print 'r'
@@ -83,7 +83,7 @@ def action_moveX(action, x):
         return 0
 
 def action_moveY(action, y):
-  
+
     if action == 0:
         #print 'r'
         return 0
@@ -101,7 +101,7 @@ def action_moveY(action, y):
     else :
         #print 's'
         return 0
-        
+
 
 def Find_badstate(start_x, start_y, goal_x, goal_y, policy, height, width, badstate):
     
@@ -129,7 +129,7 @@ def Find_badstate(start_x, start_y, goal_x, goal_y, policy, height, width, badst
     while((next_x != goal_x and next_y != goal_y) and iteration <= 20):
         iteration += 1
         
-        #print 'policy_iteration', iteration 
+        #print 'policy_iteration', iteration
         #print 'current_x', current_x
         #print 'current_y', current_y
         #print policy2[current_x, current_y]
@@ -168,7 +168,8 @@ def max_dir(policy):
             print pre_s, 'u'
         else:
             print pre_s, 's'
-            
+
+
 def change_dir(policy):
     for pre_s in range(100):
         if(policy[pre_s]==0):
@@ -181,9 +182,6 @@ def change_dir(policy):
             print pre_s,'u'
         else:
             print pre_s,'s'
-            
-        
-    
 
 def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
   """
@@ -191,8 +189,8 @@ def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
 
   inputs:
     feat_map    NxD matrix - the features for each state
-    P_a         NxNxN_ACTIONS matrix - P_a[s0, s1, a] is the transition prob of 
-                                       landing at state s1 when taking action 
+    P_a         NxNxN_ACTIONS matrix - P_a[s0, s1, a] is the transition prob of
+                                       landing at state s1 when taking action
                                        a at state s0
     gamma       float - RL discount factor
     trajs       a list of demonstrations
@@ -203,7 +201,7 @@ def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
     rewards     Nx1 vector - recoverred state rewards
   """
   N_STATES, _, N_ACTIONS = np.shape(P_a)
-  
+
 
 
   # init parameters
@@ -216,63 +214,50 @@ def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
       feat_exp += feat_map[step.cur_state,:]
   feat_exp = feat_exp/len(trajs)
 
-
-  
-  
   # training
   for iteration in range(n_iters):
-  
+
     if iteration % (n_iters/20) == 0:
       print 'iteration: {}/{}'.format(iteration, n_iters)
     print 'iteration: {}/{}'.format(iteration, n_iters)
     # compute reward function
     rewards = np.dot(feat_map, theta)
-    
+
     # compute policy
     value, policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=False)
-    
-  
-    
-    
-    #print 'badcount = {}'.format(bad_count)
-    
+
     #max_dir(policy)
-    
-    
+
     # compute state visition frequences
     svf = compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=False)
-    
-    
+
     # compute gradients
     grad = feat_exp - feat_map.T.dot(svf)
-    
-    print feat_exp
-    
+
+    #print feat_exp
+
 
     # update params
     theta += lr * grad
-    
+
     rewards = np.dot(feat_map, theta)#policy
-    
+
     _, check_policy = value_iteration.value_iteration(P_a, rewards, GAMMA, error=0.01, deterministic=True) #policy
-    
+
     #print check_policy
-    
-    
-    
+
     df = pd.DataFrame(check_policy)
-    
+
     df.T.to_csv('results/policy77.csv',mode='a',index=False, header=False)
-    
+
 
 
   rewards = np.dot(feat_map, theta)
-  
-  
+
   # return sigmoid(normalize(rewards))
   return normalize(rewards)
 
-def convert_one2two(rewards, height, width): 
+def convert_one2two(rewards, height, width):
   new_rewards_xy = np.zeros((width,height))
   #new_rewards_xy[1,4] = 3.2
 
