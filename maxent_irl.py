@@ -301,3 +301,5 @@ def convert_two2one(rewards2,width,height):
 
   return rewards1
 
+def idx2pos(self,idx):
+  return (idx % self.height, idx / self.height)
