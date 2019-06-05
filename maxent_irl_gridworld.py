@@ -21,7 +21,7 @@ PARSER.add_argument('--rand_start', dest='rand_start', action='store_true', help
 PARSER.add_argument('--no-rand_start', dest='rand_start',action='store_false', help='when sampling trajectories, fix start positions')
 PARSER.set_defaults(rand_start=False)
 PARSER.add_argument('-lr', '--learning_rate', default=0.01, type=float, help='learning rate')
-PARSER.add_argument('-ni', '--n_iters', default=2000, type=int, help='number of iterations')
+PARSER.add_argument('-ni', '--n_iters', default=1000, type=int, help='number of iterations')
 PARSER.add_argument('-rg', '--r_gamma', default=0.3, type=float, help='discount factor for rewards')
 PARSER.add_argument('-bx', '--bad_x', default= 0, type=int, help='bad state of x orign')
 PARSER.add_argument('-by', '--bad_y', default= 4, type=int, help='bad state of y orign')
