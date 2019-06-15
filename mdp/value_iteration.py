@@ -116,6 +116,7 @@ class ValueIterationAgent(object):
     returns
       a dictionary {<state, value>}
     """
+    print 1
     return self.values
 
   def get_q_values(self, state, action):
