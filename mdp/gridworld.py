@@ -30,7 +30,9 @@ class GridWorld(object):
 
 
     self.terminals = terminals
+
     self.grid = grid
+
     self.neighbors = [(0, 1), (0, -1), (1, 0), (-1, 0), (0, 0)]
     self.actions = [0, 1, 2, 3, 4]
     self.n_actions = len(self.actions)
