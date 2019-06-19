@@ -131,9 +131,9 @@ def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
     # compute gradients
     grad = feat_exp - feat_map.T.dot(svf)
 
-    if (iteration >= 100):
-      feat_exp = mod_feat_exp(feat_map, tj.mod_trajs())
-      grad = feat_exp - feat_map.T.dot(svf)
+    #if (iteration >= 100):
+      #feat_exp = mod_feat_exp(feat_map, tj.mod_trajs())
+      #grad = feat_exp - feat_map.T.dot(svf)
 
     # update params
     theta += lr * grad

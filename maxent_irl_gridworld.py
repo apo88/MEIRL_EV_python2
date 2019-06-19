@@ -7,6 +7,7 @@ import img_utils
 from mdp import gridworld
 from mdp import value_iteration
 from maxent_irl import *
+import mod_trajectory as mod
 
 Step = namedtuple('Step','cur_state action next_state reward done')
 
@@ -21,7 +22,7 @@ PARSER.add_argument('--rand_start', dest='rand_start', action='store_true', help
 PARSER.add_argument('--no-rand_start', dest='rand_start',action='store_false', help='when sampling trajectories, fix start positions')
 PARSER.set_defaults(rand_start=False)
 PARSER.add_argument('-lr', '--learning_rate', default=0.01, type=float, help='learning rate')
-PARSER.add_argument('-ni', '--n_iters', default=100, type=int, help='number of iterations')
+PARSER.add_argument('-ni', '--n_iters', default=2000, type=int, help='number of iterations')
 PARSER.add_argument('-rg', '--r_gamma', default=0.3, type=float, help='discount factor for rewards')
 PARSER.add_argument('-bx', '--bad_x', default= 0, type=int, help='bad state of x orign')
 PARSER.add_argument('-by', '--bad_y', default= 4, type=int, help='bad state of y orign')
@@ -125,6 +126,7 @@ def main():
   # rmap_gt is the ground truth for rewards
   rmap_gt = np.zeros([H, W])
 
+  print R_MAX
   #goal coordinates
   rmap_gt[H-1, W-1] = R_MAX
   # rmap_gt[H-1, 0] = R_MAX
@@ -143,8 +145,11 @@ def main():
   # the following two features might not work as well as the identity.
   # feat_map = feature_basis(gw)
   # feat_map = feature_coord(gw)
-  np.random.seed(1)
+  np.random.seed(0)
   trajs = generate_demonstrations(gw, policy_gt, n_trajs=N_TRAJS, len_traj=L_TRAJ, rand_start=RAND_START)
+
+  trajs = mod.mod_trajs()
+
 
   rewards = maxent_irl(feat_map, P_a, GAMMA, trajs, LEARNING_RATE, N_ITERS)
 
