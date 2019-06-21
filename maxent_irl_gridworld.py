@@ -156,10 +156,7 @@ def main():
 
   np.savetxt('results/rewards.txt', rewards)
 
-
-
   values, policy = value_iteration.value_iteration(P_a, rewards, GAMMA, error=0.01, deterministic=True)
-
 
   # plots
   plt.figure(figsize=(20,20))
