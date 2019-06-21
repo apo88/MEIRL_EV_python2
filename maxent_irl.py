@@ -18,6 +18,7 @@ import copy
 import pandas as pd
 import csv
 import mod_trajectory as tj
+import bad_trajectory as bdtj
 
 
 
@@ -131,9 +132,9 @@ def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
     # compute gradients
     grad = feat_exp - feat_map.T.dot(svf)
 
-    if (iteration >= 50):
-      feat_exp = mod_feat_exp(feat_map, tj.mod_trajs())
-      grad = feat_exp - feat_map.T.dot(svf)
+    #if (iteration >= 50):
+      #feat_exp = mod_feat_exp(feat_map, bdtj.bad_trajs())
+      #grad = feat_exp - feat_map.T.dot(svf)
 
     # update params
     theta += lr * grad

@@ -8,6 +8,7 @@ from mdp import gridworld
 from mdp import value_iteration
 from maxent_irl import *
 import mod_trajectory as mod
+import datetime 
 
 Step = namedtuple('Step','cur_state action next_state reward done')
 
@@ -22,7 +23,7 @@ PARSER.add_argument('--rand_start', dest='rand_start', action='store_true', help
 PARSER.add_argument('--no-rand_start', dest='rand_start',action='store_false', help='when sampling trajectories, fix start positions')
 PARSER.set_defaults(rand_start=False)
 PARSER.add_argument('-lr', '--learning_rate', default=0.01, type=float, help='learning rate')
-PARSER.add_argument('-ni', '--n_iters', default=1000, type=int, help='number of iterations')
+PARSER.add_argument('-ni', '--n_iters', default=20, type=int, help='number of iterations')
 PARSER.add_argument('-rg', '--r_gamma', default=0.3, type=float, help='discount factor for rewards')
 PARSER.add_argument('-bx', '--bad_x', default= 0, type=int, help='bad state of x orign')
 PARSER.add_argument('-by', '--bad_y', default= 4, type=int, help='bad state of y orign')
@@ -164,11 +165,17 @@ def main():
   plt.figure(figsize=(20,20))
   img_utils.heatmap2d(np.reshape(rewards, (H,W), order='F'), 'Reward Map', block=False)
   plt.plot()
-
-  plt.figure(figsize=(20,20))
-  img_utils.heatmap2d(np.reshape(values, (H,W), order='F'), 'Policy Map', block=False)
-  plt.plot()
+  now = datetime.datetime.now()
+  figname = "results/rewards_{0:%m%d%H%M}".format(now) + ".png"
+  print(figname)
+  plt.savefig(figname)
   plt.show()
+  #plt.figure(figsize=(20,20))
+  #img_utils.heatmap2d(np.reshape(values, (H,W), order='F'), 'Policy Map', block=False)
+  #plt.plot()
+  #plt.show()
+
+
   # plt.subplot(2, 2, 4)
   # img_utils.heatmap3d(np.reshape(rewards, (H,W), order='F'), 'Reward Map - Recovered', block=False)
 
