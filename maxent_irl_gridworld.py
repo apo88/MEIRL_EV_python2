@@ -8,7 +8,7 @@ from mdp import gridworld
 from mdp import value_iteration
 from maxent_irl import *
 import mod_trajectory as mod
-import datetime 
+import datetime
 
 Step = namedtuple('Step','cur_state action next_state reward done')
 
