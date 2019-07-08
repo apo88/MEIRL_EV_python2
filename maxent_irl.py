@@ -76,8 +76,104 @@ def mod_feat_exp(feat_map,trajs):
   feat_exp = feat_exp/len(trajs)
   return feat_exp
 
+def generate_newtrajs(gw, policy, n_trajs=100, len_traj=20, rand_start=False, start_pos=[0,0]):
+  """gatheres expert demonstrations
 
-def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
+  inputs:
+  gw          Gridworld - the environment
+  policy      Nx1 matrix
+  n_trajs     int - number of trajectories to generate
+  rand_start  bool - randomly picking start position or not
+  start_pos   2x1 list - set start position, default [0,0]
+  returns:
+  trajs       a list of trajectories - each element in the list is a list of Steps representing an episode
+  """
+
+  trajs = []
+  for i in range(n_trajs):
+    if rand_start:
+      # override start_pos
+      start_pos = [np.random.randint(0, gw.height), np.random.randint(0, gw.width)]
+
+    episode = []
+    gw.reset(start_pos)
+    cur_state = start_pos
+    cur_state, action, next_state, reward, is_done = gw.step(int(policy[gw.pos2idx(cur_state)]))
+    episode.append(Step(cur_state=gw.pos2idx(cur_state), action=action, next_state=gw.pos2idx(next_state), reward=reward, done=is_done))
+    # while not is_done:
+    for _ in range(len_traj):
+        cur_state, action, next_state, reward, is_done = gw.step(int(policy[gw.pos2idx(next_state)]))
+        episode.append(Step(cur_state=gw.pos2idx(cur_state), action=action, next_state=gw.pos2idx(next_state), reward=reward, done=is_done))
+        if is_done:
+            break
+    trajs.append(episode)
+  return trajs
+
+def optimal_direction(state,policy, Width, Height):
+  #print "policy",policy
+
+  if(int(policy) == 0):
+    if(Height*Width - Height < state < Height*Width):
+      state = state
+    else:
+      state += Height
+  elif(int(policy) == 1):
+    if(state < Height):
+      state = state
+    else:
+      state -= Height
+  elif(int(policy) == 2):
+    if((state % (Height-1)) == 0):
+      state = state
+    else:
+      state += 1
+  elif(int(policy) == 3):
+    if(state % Height == 0):
+      state = state
+    else:
+      state -= 1
+  else:
+    state = state
+  return state
+
+
+
+def get_optimaltrajectory(policy, Height, Width, Length):
+  opt_traj=[]
+  state = 0
+  opt_traj.append(0)
+
+  while(state != (Height * Width - 1) and len(opt_traj) < Length):
+    next_state = optimal_direction(state,policy[state], Height, Width)
+    opt_traj.append(next_state)
+    state = next_state
+    #print len(opt_traj)
+
+  return opt_traj
+
+def match_rate(method, o_traj, e_traj):
+  if(method == 'simple'):
+    match_state = (set(o_traj) & set(e_traj))
+    m_rate = float(len(match_state)) / float(len(o_traj))
+    print "match_state", match_state, len(match_state), len(o_traj)
+    print "m_rate", m_rate
+
+  WINDOWSIZE = 3
+  '''
+
+  if(method == 'step'):
+    match_count = 0
+
+    m_rate = float(match_count)/ float(len(o_traj))
+    print "m_rate", m_rate,
+    print "match_count", match_count
+    '''
+
+  return m_rate
+
+
+
+def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   """
   Maximum Entropy Inverse Reinforcement Learning (Maxent IRL)
 
@@ -101,7 +197,9 @@ def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
 
   irl_gw = gridworld.GridWorld(rmap_gt, {}, 1 - ACT_RAND)
 
-  tj.hello()
+  MRATE_THRESHOLD = 0.7
+
+  exp_count = 0
 
   # init parameters
   theta = np.random.uniform(size=(feat_map.shape[1],))
@@ -114,6 +212,11 @@ def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
       feat_exp += feat_map[step.cur_state,:]
   feat_exp = feat_exp/len(trajs)
 
+  exp_length = 14
+  check_opt_traj =[]
+
+  exp_traj = [0, 7, 14, 15, 22, 29, 28, 35, 42, 43, 44, 45, 46, 47, 48]
+
   # training
   for iteration in range(n_iters):
 
@@ -125,6 +228,49 @@ def maxent_irl(feat_map, P_a, gamma, trajs, lr, n_iters):
 
     # compute policy
     value, policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=False)
+
+    true_value, true_policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=True)
+
+    value3, policy3 = value_iteration.value_iteration(P_a, rewards, gamma, error=0.3, deterministic=True)
+
+    print "true_policy", true_policy
+    print "policy3", policy3
+
+    # compute new trajectory
+    new_trajs = generate_newtrajs(gw, policy3, n_trajs=100, len_traj=20, rand_start=False)
+
+    opt_traj = get_optimaltrajectory(policy3,7,7,20)
+
+    print opt_traj
+    print len(opt_traj)
+
+    '''
+    if((exp_length >= len(opt_traj)-1) and (opt_traj != check_opt_traj)):
+      trajs = new_trajs
+      exp_length = len(opt_traj)
+      exp_count += 1
+      for episode in trajs:
+        for step in episode:
+          feat_exp += feat_map[step.cur_state,:]
+      feat_exp = feat_exp/len(trajs)
+      check_opt_traj=opt_traj
+    '''
+
+    print "exp_count", exp_count
+
+    m_rate = match_rate('simple',opt_traj,exp_traj)
+
+    if((exp_length >= len(opt_traj)-1) and (m_rate >= MRATE_THRESHOLD) and (opt_traj != check_opt_traj)):
+      trajs = new_trajs
+      exp_length = len(opt_traj)
+      exp_count += 1
+      for episode in trajs:
+        for step in episode:
+          feat_exp += feat_map[step.cur_state,:]
+      feat_exp = feat_exp/len(trajs)
+      check_opt_traj=opt_traj
+
+
 
     # compute state visition frequences
     svf = compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=False)
