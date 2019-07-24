@@ -136,6 +136,36 @@ def optimal_direction(state,policy, Width, Height):
     state = state
   return state
 
+def e_greedy_direction(state, policy, Width, Height, epsilon):
+  rn = np.random.rand()
+  print "random", rn
+  if(rn < epsilon):
+    policy = np.random.randint(0,4)
+  if(int(policy) == 0):
+    if(Height*Width - Height < state < Height*Width):
+      state = state
+    else:
+      state += Height
+  elif(int(policy) == 1):
+    if(state < Height):
+      state = state
+    else:
+      state -= Height
+  elif(int(policy) == 2):
+    if((state % (Height-1)) == 0):
+      state = state
+    else:
+      state += 1
+  elif(int(policy) == 3):
+    if(state % Height == 0):
+      state = state
+    else:
+      state -= 1
+  else:
+    state = state
+
+  return state
+
 
 
 def get_optimaltrajectory(policy, Height, Width, Length):
@@ -150,6 +180,18 @@ def get_optimaltrajectory(policy, Height, Width, Length):
     #print len(opt_traj)
 
   return opt_traj
+
+def get_trajectory_egreedy(policy, Height, Width, Length):
+  e_traj=[]
+  state = 0
+  e_traj.append(0)
+
+  while(state != (Height * Width -1) and len(e_traj) < Length):
+    next_state = e_greedy_direction(state, policy[state], Height, Width, 0.3)
+    e_traj.append(next_state)
+    state = next_state
+
+  return e_traj
 
 def match_rate(method, o_traj, e_traj):
   if(method == 'simple'):
@@ -237,12 +279,16 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     print "policy3", policy3
 
     # compute new trajectory
-    new_trajs = generate_newtrajs(gw, policy3, n_trajs=100, len_traj=20, rand_start=False)
+    new_trajs = generate_newtrajs(gw, true_policy, n_trajs=100, len_traj=20, rand_start=False)
 
-    opt_traj = get_optimaltrajectory(policy3,7,7,20)
+    opt_traj = get_optimaltrajectory(true_policy,7,7,20)
+
+    e_traj = get_trajectory_egreedy(true_policy, 7, 7, 20)
 
     print opt_traj
     print len(opt_traj)
+    print e_traj
+    print len(e_traj)
 
     '''
     if((exp_length >= len(opt_traj)-1) and (opt_traj != check_opt_traj)):
