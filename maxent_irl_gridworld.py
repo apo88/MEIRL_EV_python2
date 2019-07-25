@@ -147,7 +147,7 @@ def main():
   # the following two features might not work as well as the identity.
   # feat_map = feature_basis(gw)
   # feat_map = feature_coord(gw)
-  np.random.seed(2)
+  np.random.seed(0)
 
   #print type(policy_gt)
 

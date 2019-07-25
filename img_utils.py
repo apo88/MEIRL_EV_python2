@@ -22,12 +22,12 @@ def heatmap2d(hm_mat, title='', block=True, fig_num=1, text=True):
   if block:
     plt.figure(fig_num)
     plt.clf()
-  
+
   # plt.imshow(hm_mat, cmap='hot', interpolation='nearest')
-  plt.imshow(hm_mat, interpolation='nearest', cmap="GnBu")
+  plt.imshow(hm_mat, interpolation='nearest', cmap="PuRd")
   plt.title(title)
   plt.colorbar()
-  
+
   if text:
     for y in range(hm_mat.shape[0]):
       for x in range(hm_mat.shape[1]):

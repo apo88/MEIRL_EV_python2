@@ -140,7 +140,33 @@ def e_greedy_direction(state, policy, Width, Height, epsilon):
   rn = np.random.rand()
   #print "random", rn
   if(rn < epsilon):
-    policy = np.random.randint(0,4)
+    if(state == 0):
+      randlist = [0,2,4]
+      policy = np.random.choice(randlist)
+    elif(state == 6):
+      randlist = [0,3,4]
+      policy = np.random.choice(randlist)
+    elif(state == 42):
+      randlist = [1,2,4]
+      policy = np.random.choice(randlist)
+    elif(state == 48):
+      randlist = [1,3,4]
+      policy = np.random.choice(randlist)
+    elif(0 < state < 6):
+      randlist = [0,2,3,4]
+      policy = np.random.choice(randlist)
+    elif((state % 7) == 0):
+      randlist = [0,1,2,4]
+      policy = np.random.choice(randlist)
+    elif((state % 6) == 0):
+      randlist = [0,1,3,4]
+      policy = np.random.choice(randlist)
+    elif(42 < state < 48):
+      randlist = [1, 2, 3, 4]
+      policy = np.random.choice(randlist)
+    else:
+      policy = np.random.randint(0,4)
+
   if(int(policy) == 0):
     if(Height*Width - Height < state < Height*Width):
       state = state
@@ -184,10 +210,11 @@ def get_optimaltrajectory(policy, Height, Width, Length):
 def get_trajectory_egreedy(policy, Height, Width, Length):
   e_traj=[]
   state = 0
+  next_state = 0
   e_traj.append(0)
 
-  while(state != (Height * Width -1) and len(e_traj) < Length and state < 49):
-    next_state = e_greedy_direction(state, policy[state], Height, Width, 0.3)
+  while(state != (Height * Width -1) and len(e_traj) < Length and next_state < 49):
+    next_state = e_greedy_direction(state, policy[state], Height, Width, 0.1)
     e_traj.append(next_state)
     state = next_state
 
@@ -275,7 +302,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     true_value, true_policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=True)
 
-    value3, policy3 = value_iteration.value_iteration(P_a, rewards, gamma, error=0.3, deterministic=True)
+    #value3, policy3 = value_iteration.value_iteration(P_a, rewards, gamma, error=0.3, deterministic=True)
 
     #print "true_policy", true_policy
     #print "policy3", policy3
@@ -289,8 +316,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     #print opt_traj
     #print len(opt_traj)
-    #print e_traj
-    #print len(e_traj)
+    print e_traj
+    print len(e_traj)
 
     '''
     if((exp_length >= len(opt_traj)-1) and (opt_traj != check_opt_traj)):
@@ -346,7 +373,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     data_stepsize.append(len(check_opt_traj))
 
 
-    with open('results/step_size.csv', 'a', )  as f:
+    with open('results/step_size.csv', 'a')  as f:
       f.write(str(iteration))
       f.write(",")
       f.write(str(data_stepsize[iteration]))
