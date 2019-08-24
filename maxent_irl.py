@@ -222,10 +222,10 @@ def get_trajectory_egreedy(policy, Height, Width, Length):
 
 def match_rate(method, o_traj, e_traj):
   if(method == 'simple'):
-    match_state = (set(o_traj) & set(e_traj))
+    match_state = set(set(o_traj) & set(e_traj))
     m_rate = float(len(match_state)) / float(len(o_traj))
-    #print "match_state", match_state, len(match_state), len(o_traj)
-    #print "m_rate", m_rate
+    print "match_state", match_state, len(match_state), len(o_traj)
+    print "m_rate", m_rate
 
   WINDOWSIZE = 3
 
@@ -263,7 +263,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
   irl_gw = gridworld.GridWorld(rmap_gt, {}, 1 - ACT_RAND)
 
-  MRATE_THRESHOLD = 0.7
+  MRATE_THRESHOLD = 0.8
 
   exp_count = 0
 
@@ -316,8 +316,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     #print opt_traj
     #print len(opt_traj)
-    print e_traj
-    print len(e_traj)
+    #print e_traj
+    #print len(e_traj)
 
     '''
     if((exp_length >= len(opt_traj)-1) and (opt_traj != check_opt_traj)):
