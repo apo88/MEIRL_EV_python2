@@ -224,8 +224,8 @@ def match_rate(method, o_traj, e_traj):
   if(method == 'simple'):
     match_state = set(set(o_traj) & set(e_traj))
     m_rate = float(len(match_state)) / float(len(o_traj))
-    print "match_state", match_state, len(match_state), len(o_traj)
-    print "m_rate", m_rate
+    #print "match_state", match_state, len(match_state), len(o_traj)
+    #print "m_rate", m_rate
 
   WINDOWSIZE = 3
 
@@ -238,6 +238,18 @@ def match_rate(method, o_traj, e_traj):
 
 
   return m_rate
+
+def tune_rate(iteration, n_iters, m_rate, update_time):
+  progress = iteration / n_iters
+  rate = m_rate
+
+  if((progress > 0.3) and (len(update_time) < 2)):
+    rate = m_rate - 0.1
+  if((progress > 0.5) and (len(update_time) < 2)):
+    rate = m_rate - 0.3
+
+  return rate
+
 
 def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   """
@@ -278,7 +290,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       feat_exp += feat_map[step.cur_state,:]
   feat_exp = feat_exp/len(trajs)
 
-  exp_length = 17
+  exp_length = 20
   check_opt_traj =[]
 
   update_time = []
@@ -288,11 +300,11 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   #exp_traj = [0, 7, 14, 15, 22, 29, 28, 35, 42, 43, 44, 45, 46, 47, 48]
   exp_traj = [0, 7, 8, 9, 16, 23 , 22, 21 , 28, 35, 42, 43, 44, 45, 46, 47, 48]
 
+  #exp_traj = [0, 1, 2, 3, 4, 5, 6, 13, 12, 11, 10, 9, 16, 23, 30, 37, 44, 45, 46, 47, 48]
+
   # training
   for iteration in range(n_iters):
 
-    if iteration % (n_iters/20) == 0:
-      print 'iteration: {}/{}'.format(iteration, n_iters)
     print 'iteration: {}/{}'.format(iteration, n_iters)
     # compute reward function
     rewards = np.dot(feat_map, theta)
@@ -308,11 +320,14 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     #print "policy3", policy3
 
     # compute new trajectory
+
     new_trajs = generate_newtrajs(gw, true_policy, n_trajs=100, len_traj=20, rand_start=False)
 
     opt_traj = get_optimaltrajectory(true_policy,7,7,20)
 
     e_traj = get_trajectory_egreedy(true_policy, 7, 7, 20)
+
+
 
     #print opt_traj
     #print len(opt_traj)
@@ -331,7 +346,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       check_opt_traj=opt_traj
     '''
 
-    print "exp_count", exp_count
+    #print "exp_count", exp_count
 
 
     #compare optimal trajectory
@@ -354,9 +369,17 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     #compare epsilon-greedy trajectory
 
+
     m_rate = match_rate('simple',e_traj,exp_traj)
 
-    if((exp_length >= len(e_traj)) and (m_rate >= MRATE_THRESHOLD) and (e_traj != check_opt_traj)):
+    m_threshold = tune_rate(iteration, n_iters, MRATE_THRESHOLD, update_time)
+    print ("m_threshold", m_threshold)
+
+
+
+
+
+    if((exp_length >= len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj)):
       trajs = new_trajs
       exp_length = len(e_traj)
       exp_count += 1
@@ -373,12 +396,15 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     data_stepsize.append(len(check_opt_traj))
 
 
+
+    '''
     with open('results/step_size.csv', 'a')  as f:
       f.write(str(iteration))
       f.write(",")
       f.write(str(data_stepsize[iteration]))
       f.write('\n')
       f.close
+    '''
 
 
     # compute state visition frequences

@@ -147,13 +147,15 @@ def main():
   # the following two features might not work as well as the identity.
   # feat_map = feature_basis(gw)
   # feat_map = feature_coord(gw)
-  np.random.seed(1)
+  np.random.seed(0)
 
   #print type(policy_gt)
 
   #trajs = generate_demonstrations(gw, policy_gt, n_trajs=N_TRAJS, len_traj=L_TRAJ, rand_start=RAND_START)
 
   #trajs = mod.init_trajs()
+
+  #trajs = mod.init_trajs2()
 
   trajs = mod.init_trajs2()
 

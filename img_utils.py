@@ -24,8 +24,9 @@ def heatmap2d(hm_mat, title='', block=True, fig_num=1, text=True):
     plt.clf()
 
   # plt.imshow(hm_mat, cmap='hot', interpolation='nearest')
+  plt.rcParams["font.size"] = 18
   plt.imshow(hm_mat, interpolation='nearest', cmap="PuRd")
-  plt.title(title)
+  plt.title(title, fontsize=18)
   plt.colorbar()
 
   if text:
@@ -33,7 +34,7 @@ def heatmap2d(hm_mat, title='', block=True, fig_num=1, text=True):
       for x in range(hm_mat.shape[1]):
         plt.text(x, y, '%.3f' % hm_mat[y, x],
                  horizontalalignment='center',
-                 verticalalignment='center',
+                 verticalalignment='center', fontsize=18
                  )
 
   if block:
