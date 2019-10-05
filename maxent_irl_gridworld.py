@@ -155,9 +155,9 @@ def main():
 
   #trajs = mod.init_trajs()
 
-  #trajs = mod.init_trajs2()
+  trajs = mod.init_badtrajs()
 
-  trajs = mod.init_trajs2()
+  #trajs = mod.init_trajs2()
 
   print trajs
 

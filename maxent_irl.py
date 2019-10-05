@@ -141,31 +141,31 @@ def e_greedy_direction(state, policy, Width, Height, epsilon):
   #print "random", rn
   if(rn < epsilon):
     if(state == 0):
-      randlist = [0,2,4]
+      randlist = [0,2]
       policy = np.random.choice(randlist)
     elif(state == 6):
-      randlist = [0,3,4]
+      randlist = [0,3]
       policy = np.random.choice(randlist)
     elif(state == 42):
-      randlist = [1,2,4]
+      randlist = [1,2]
       policy = np.random.choice(randlist)
     elif(state == 48):
-      randlist = [1,3,4]
+      randlist = [1,3]
       policy = np.random.choice(randlist)
     elif(0 < state < 6):
-      randlist = [0,2,3,4]
+      randlist = [0,2,3]
       policy = np.random.choice(randlist)
     elif((state % 7) == 0):
-      randlist = [0,1,2,4]
+      randlist = [0,1,2]
       policy = np.random.choice(randlist)
-    elif((state % 6) == 0):
-      randlist = [0,1,3,4]
+    elif((state == 13) or (state == 20) or (state == 27) or (state == 34) or (state == 41)):
+      randlist = [0,1,3]
       policy = np.random.choice(randlist)
     elif(42 < state < 48):
-      randlist = [1, 2, 3, 4]
+      randlist = [1, 2, 3]
       policy = np.random.choice(randlist)
     else:
-      policy = np.random.randint(0,4)
+      policy = np.random.randint(0,3)
 
   if(int(policy) == 0):
     if(Height*Width - Height < state < Height*Width):
@@ -214,7 +214,7 @@ def get_trajectory_egreedy(policy, Height, Width, Length):
   e_traj.append(0)
 
   while(state != (Height * Width -1) and len(e_traj) < Length and next_state < 49):
-    next_state = e_greedy_direction(state, policy[state], Height, Width, 0.1)
+    next_state = e_greedy_direction(state, policy[state], Height, Width, 0.5)
     e_traj.append(next_state)
     state = next_state
 
@@ -275,7 +275,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
   irl_gw = gridworld.GridWorld(rmap_gt, {}, 1 - ACT_RAND)
 
-  MRATE_THRESHOLD = 0.8
+  MRATE_THRESHOLD = 0.1
 
   exp_count = 0
 
@@ -290,7 +290,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       feat_exp += feat_map[step.cur_state,:]
   feat_exp = feat_exp/len(trajs)
 
-  exp_length = 20
+
   check_opt_traj =[]
 
   update_time = []
@@ -298,9 +298,12 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   data_stepsize = []
 
   #exp_traj = [0, 7, 14, 15, 22, 29, 28, 35, 42, 43, 44, 45, 46, 47, 48]
-  exp_traj = [0, 7, 8, 9, 16, 23 , 22, 21 , 28, 35, 42, 43, 44, 45, 46, 47, 48]
-
-  #exp_traj = [0, 1, 2, 3, 4, 5, 6, 13, 12, 11, 10, 9, 16, 23, 30, 37, 44, 45, 46, 47, 48]
+  #exp_traj = [0, 7, 8, 9, 16, 23 , 22, 21 , 28, 35, 42, 43, 44, 45, 46, 47, 48]
+  #e_traj = [0, 7, 8, 9, 16, 23 , 22, 21 , 28, 35, 42, 43, 44, 45, 46, 47, 48]
+  exp_length = 21
+  exp_traj = [0, 1, 2, 3, 4, 5, 6, 13, 12, 11, 10, 9, 16, 23, 30, 37, 44, 45, 46, 47, 48]
+  e_traj = [0, 1, 2, 3, 4, 5, 6, 13, 12, 11, 10, 9, 16, 23, 30, 37, 44, 45, 46, 47, 48]
+  exp_flag = False
 
   # training
   for iteration in range(n_iters):
@@ -323,11 +326,15 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     new_trajs = generate_newtrajs(gw, true_policy, n_trajs=100, len_traj=20, rand_start=False)
 
-    opt_traj = get_optimaltrajectory(true_policy,7,7,20)
-
-    e_traj = get_trajectory_egreedy(true_policy, 7, 7, 20)
+    #opt_traj = get_optimaltrajectory(true_policy,7,7,20)
 
 
+    #if terminal == 48
+    candidate = get_trajectory_egreedy(true_policy, 7, 7, 20)
+    print "candidate", candidate
+    if (candidate[-1] == 48):
+      exp_traj = candidate
+    print "e_traj", e_traj
 
     #print opt_traj
     #print len(opt_traj)
@@ -373,13 +380,9 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     m_rate = match_rate('simple',e_traj,exp_traj)
 
     m_threshold = tune_rate(iteration, n_iters, MRATE_THRESHOLD, update_time)
-    print ("m_threshold", m_threshold)
+    #print ("m_threshold", m_threshold)
 
-
-
-
-
-    if((exp_length >= len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj)):
+    if((len(exp_traj) >= len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj)):
       trajs = new_trajs
       exp_length = len(e_traj)
       exp_count += 1
@@ -388,8 +391,11 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
           feat_exp += feat_map[step.cur_state,:]
       feat_exp = feat_exp/len(trajs)
       check_opt_traj=e_traj
+      exp_traj = e_traj
       update_time.append(iteration)
+      exp_flag = True
 
+    print "exp_traj", exp_traj
 
     print "update_time", update_time
     #print data_stepsize
@@ -397,14 +403,23 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
 
 
-    '''
+
     with open('results/step_size.csv', 'a')  as f:
       f.write(str(iteration))
       f.write(",")
       f.write(str(data_stepsize[iteration]))
       f.write('\n')
       f.close
-    '''
+
+    with open('results/expert.csv', 'a')  as f:
+      f.write(str(iteration))
+      f.write(",")
+      for state in exp_traj:
+        f.write(str(state))
+        f.write(",")
+      f.write('\n')
+      f.close
+
 
 
     # compute state visition frequences
