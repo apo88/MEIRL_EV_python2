@@ -19,7 +19,8 @@ import pandas as pd
 import csv
 import mod_trajectory as tj
 import bad_trajectory as bdtj
-
+import matplotlib.pyplot as plt
+import datetime
 
 
 R_DISCOUNT = 0.1
@@ -214,7 +215,7 @@ def get_trajectory_egreedy(policy, Height, Width, Length):
   e_traj.append(0)
 
   while(state != (Height * Width -1) and len(e_traj) < Length and next_state < 49):
-    next_state = e_greedy_direction(state, policy[state], Height, Width, 0.5)
+    next_state = e_greedy_direction(state, policy[state], Height, Width, 0.3)
     e_traj.append(next_state)
     state = next_state
 
@@ -268,14 +269,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   returns
     rewards     Nx1 vector - recoverred state rewardsF
   """
-  N_STATES, _, N_ACTIONS = np.shape(P_a)
 
-
-  rmap_gt = np.zeros([H, W])
-
-  irl_gw = gridworld.GridWorld(rmap_gt, {}, 1 - ACT_RAND)
-
-  MRATE_THRESHOLD = 0.1
+  MRATE_THRESHOLD = 0.4
 
   exp_count = 0
 
@@ -297,6 +292,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
   data_stepsize = []
 
+
   #exp_traj = [0, 7, 14, 15, 22, 29, 28, 35, 42, 43, 44, 45, 46, 47, 48]
   #exp_traj = [0, 7, 8, 9, 16, 23 , 22, 21 , 28, 35, 42, 43, 44, 45, 46, 47, 48]
   #e_traj = [0, 7, 8, 9, 16, 23 , 22, 21 , 28, 35, 42, 43, 44, 45, 46, 47, 48]
@@ -309,8 +305,21 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   for iteration in range(n_iters):
 
     print 'iteration: {}/{}'.format(iteration, n_iters)
+
+    #print trajs
     # compute reward function
     rewards = np.dot(feat_map, theta)
+
+
+    if (iteration % 50 == 0):
+      plt.figure(figsize=(20,20))
+      img_utils.heatmap2d(np.reshape(rewards, (H,W), order='F'), 'Reward Map', block=False)
+      plt.plot()
+      now = datetime.datetime.now()
+      figname = "results/reward/rewards_{0:%m%d%H%M%S}".format(now) + ".png"
+      print(figname)
+      plt.savefig(figname)
+      #plt.show()
 
     # compute policy
     value, policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=False)
@@ -326,6 +335,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     new_trajs = generate_newtrajs(gw, true_policy, n_trajs=100, len_traj=20, rand_start=False)
 
+
     #opt_traj = get_optimaltrajectory(true_policy,7,7,20)
 
 
@@ -333,7 +343,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     candidate = get_trajectory_egreedy(true_policy, 7, 7, 20)
     print "candidate", candidate
     if (candidate[-1] == 48):
-      exp_traj = candidate
+      e_traj = candidate
     print "e_traj", e_traj
 
     #print opt_traj
@@ -382,7 +392,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     m_threshold = tune_rate(iteration, n_iters, MRATE_THRESHOLD, update_time)
     #print ("m_threshold", m_threshold)
 
-    if((len(exp_traj) >= len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj)):
+    if((len(exp_traj) > len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj)):
+      print "aaaaaaaaaa"
       trajs = new_trajs
       exp_length = len(e_traj)
       exp_count += 1
@@ -420,10 +431,21 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       f.write('\n')
       f.close
 
+    with open('results/candidate.csv', 'a')  as f:
+      f.write(str(iteration))
+      f.write(",")
+      for state in candidate:
+        f.write(str(state))
+        f.write(",")
+      f.write('\n')
+      f.close
+
+
 
 
     # compute state visition frequences
     svf = compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=False)
+
 
     # compute gradients
     grad = feat_exp - feat_map.T.dot(svf)
