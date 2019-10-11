@@ -149,7 +149,6 @@ def main():
   # feat_map = feature_coord(gw)
   np.random.seed(3)
 
-  #print type(policy_gt)
 
   #trajs = generate_demonstrations(gw, policy_gt, n_trajs=N_TRAJS, len_traj=L_TRAJ, rand_start=RAND_START)
 

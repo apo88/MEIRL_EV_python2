@@ -228,8 +228,6 @@ def match_rate(method, o_traj, e_traj):
     #print "match_state", match_state, len(match_state), len(o_traj)
     #print "m_rate", m_rate
 
-  WINDOWSIZE = 3
-
   if(method == 'step'):
     match_count = 0
 
