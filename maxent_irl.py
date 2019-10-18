@@ -165,11 +165,57 @@ def e_greedy_direction(state, policy, Width, Height, epsilon):
     elif(42 < state < 48):
       randlist = [1, 2, 3]
       policy = np.random.choice(randlist)
-    else:
-      policy = np.random.randint(0,3)
+  else:
+      randlist = [0, 1, 2, 3]
+      policy = np.random.choice(randlist)
 
   if(int(policy) == 0):
-    if(Height*Width - Height < state < Height*Width):
+    if(state==42):
+      randlist = [0, 2]
+      policy = np.random.choice(randlist)
+    elif(Height*Width - Height <= state < Height*Width):
+      randlist = [1, 2, 3]
+      policy = np.random.choice(randlist)
+    else:
+      policy = policy
+  elif(int(policy) == 1):
+    if(state==0):
+      randlist = [0, 2]
+      policy = np.random.choice(randlist)
+    elif(state==6):
+      randlist = [0, 3]
+      policy = np.random.choice(randlist)
+    elif(state < Height):
+      randlist = [0, 2, 3]
+      policy = np.random.choice(randlist)
+    else:
+      policy = policy
+  elif(int(policy) == 2):
+    if(state==6):
+      randlist = [0, 3]
+      policy = np.random.choice(randlist)
+    elif((state==6) or (state==13) or (state==20) or (state==27) or (state==34) or (state==41)):
+      randlist = [0, 1, 3]
+      policy = np.random.choice(randlist)
+    else:
+      policy = policy
+  elif(int(policy) == 3):
+    if(state==0):
+      randlist=[0, 2]
+      policy = np.random.choice(randlist)
+    elif(state==42):
+      randlist= [1,2]
+      policy = np.random.choice(randlist)
+    elif(state % Height == 0):
+      randlist = [0, 1, 2]
+      policy = np.random.choice(randlist)
+    else:
+      policy = policy
+  else:
+    policy = policy
+
+  if(int(policy) == 0):
+    if(Height*Width - Height <= state < Height*Width):
       state = state
     else:
       state += Height
@@ -179,7 +225,7 @@ def e_greedy_direction(state, policy, Width, Height, epsilon):
     else:
       state -= Height
   elif(int(policy) == 2):
-    if((state % (Height-1)) == 0):
+    if((state==6) or (state==13) or (state==20) or (state==27) or (state==34) or (state==41)):
       state = state
     else:
       state += 1
@@ -297,7 +343,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   exp_length = 21
   exp_traj = [0, 1, 2, 3, 4, 5, 6, 13, 12, 11, 10, 9, 16, 23, 30, 37, 44, 45, 46, 47, 48]
   e_traj = [0, 1, 2, 3, 4, 5, 6, 13, 12, 11, 10, 9, 16, 23, 30, 37, 44, 45, 46, 47, 48]
-  exp_flag = False
+
+  select_candidate = []
 
   # training
   for iteration in range(n_iters):
@@ -331,18 +378,29 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     # compute new trajectory
 
-    new_trajs = generate_newtrajs(gw, true_policy, n_trajs=100, len_traj=20, rand_start=False)
+    new_trajs = generate_newtrajs(gw, true_policy, n_trajs=100, len_traj=30, rand_start=False)
 
 
     #opt_traj = get_optimaltrajectory(true_policy,7,7,20)
 
 
     #if terminal == 48
-    candidate = get_trajectory_egreedy(true_policy, 7, 7, 20)
-    print "candidate", candidate
+    candidate = get_trajectory_egreedy(true_policy, 7, 7, 30)
+
+    re_candidate = sorted(set(candidate), key=candidate.index)
+
+    if exp_traj[-2] in re_candidate:
+      select_candidate = copy.deepcopy(re_candidate)
+
+    print "candidate   ", candidate
+    print "re_candidate", re_candidate
+
     if (candidate[-1] == 48):
       e_traj = candidate
     print "e_traj", e_traj
+
+
+
 
     #print opt_traj
     #print len(opt_traj)
@@ -437,6 +495,27 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
         f.write(",")
       f.write('\n')
       f.close
+
+    with open('results/re_candidate.csv', 'a')  as f:
+      f.write(str(iteration))
+      f.write(",")
+      for state in re_candidate:
+        f.write(str(state))
+        f.write(",")
+      f.write('\n')
+      f.close
+
+    with open('results/select_candidate.csv', 'a')  as f:
+      f.write(str(iteration))
+      f.write(",")
+      for state in select_candidate:
+        f.write(str(state))
+        f.write(",")
+      f.write('\n')
+      f.close
+
+    select_candidate = []
+
 
 
 
