@@ -366,6 +366,14 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       plt.savefig(figname)
       #plt.show()
 
+    if(iteration == 126):
+      trajs = tj.re_trajs()
+      for episode in trajs:
+        for step in episode:
+          feat_exp += feat_map[step.cur_state,:]
+      feat_exp = feat_exp/len(trajs)
+      print trajs
+
     # compute policy
     value, policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=False)
 
@@ -399,13 +407,6 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       e_traj = candidate
     print "e_traj", e_traj
 
-
-
-
-    #print opt_traj
-    #print len(opt_traj)
-    #print e_traj
-    #print len(e_traj)
 
     '''
     if((exp_length >= len(opt_traj)-1) and (opt_traj != check_opt_traj)):
@@ -448,7 +449,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     m_threshold = tune_rate(iteration, n_iters, MRATE_THRESHOLD, update_time)
     #print ("m_threshold", m_threshold)
 
-    if((len(exp_traj) > len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj)):
+    if((len(exp_traj)-15 > len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj)):
       print "aaaaaaaaaa"
       trajs = new_trajs
       exp_length = len(e_traj)
@@ -467,9 +468,6 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     print "update_time", update_time
     #print data_stepsize
     data_stepsize.append(len(check_opt_traj))
-
-
-
 
     with open('results/step_size.csv', 'a')  as f:
       f.write(str(iteration))
@@ -516,10 +514,6 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     select_candidate = []
 
-
-
-
-
     # compute state visition frequences
     svf = compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=False)
 
@@ -542,9 +536,9 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     df.T.to_csv('results/policy77.csv',mode='a',index=False, header=False)
 
-
-
   rewards = np.dot(feat_map, theta)
+
+  print trajs
 
   # return sigmoid(normalize(rewards))
   return normalize(rewards)

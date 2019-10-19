@@ -15,7 +15,7 @@ Step = namedtuple('Step','cur_state action next_state reward done')
 PARSER = argparse.ArgumentParser(description=None)
 PARSER.add_argument('-hei', '--height', default=7, type=int, help='height of the gridworld')
 PARSER.add_argument('-wid', '--width', default=7, type=int, help='width of the gridworld')
-PARSER.add_argument('-g', '--gamma', default=0.5, type=float, help='discount factor')
+PARSER.add_argument('-g', '--gamma', default=0.3, type=float, help='discount factor')
 PARSER.add_argument('-a', '--act_random', default=0.1, type=float, help='probability of acting randomly')
 PARSER.add_argument('-t', '--n_trajs', default=100, type=int, help='number of expert trajectories')
 PARSER.add_argument('-l', '--l_traj', default=30, type=int, help='length of expert trajectory')
@@ -147,7 +147,7 @@ def main():
   # the following two features might not work as well as the identity.
   # feat_map = feature_basis(gw)
   # feat_map = feature_coord(gw)
-  np.random.seed(1)
+  np.random.seed(3)
 
 
   #trajs = generate_demonstrations(gw, policy_gt, n_trajs=N_TRAJS, len_traj=L_TRAJ, rand_start=RAND_START)
@@ -157,6 +157,7 @@ def main():
   trajs = mod.init_badtrajs()
 
   #trajs = mod.init_trajs2()
+  #trajs = mod.re_trajs()
 
 
   rewards = maxent_irl(gw, feat_map, P_a, GAMMA, trajs, LEARNING_RATE, N_ITERS)
