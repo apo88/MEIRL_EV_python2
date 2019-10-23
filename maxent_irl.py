@@ -141,6 +141,7 @@ def e_greedy_direction(state, policy, Width, Height, epsilon):
   rn = np.random.rand()
   #print "random", rn
   if(rn < epsilon):
+    #print "random"
     if(state == 0):
       randlist = [0,2]
       policy = np.random.choice(randlist)
@@ -165,9 +166,12 @@ def e_greedy_direction(state, policy, Width, Height, epsilon):
     elif(42 < state < 48):
       randlist = [1, 2, 3]
       policy = np.random.choice(randlist)
-  else:
+    else:
       randlist = [0, 1, 2, 3]
       policy = np.random.choice(randlist)
+  else:
+    #print "not_random"
+    policy = policy
 
   if(int(policy) == 0):
     if(state==42):
@@ -239,8 +243,6 @@ def e_greedy_direction(state, policy, Width, Height, epsilon):
 
   return state
 
-
-
 def get_optimaltrajectory(policy, Height, Width, Length):
   opt_traj=[]
   state = 0
@@ -261,9 +263,12 @@ def get_trajectory_egreedy(policy, Height, Width, Length):
   e_traj.append(0)
 
   while(state != (Height * Width -1) and len(e_traj) < Length and next_state < 49):
+    #print "state", state
+    #print "policy", policy[state]
     next_state = e_greedy_direction(state, policy[state], Height, Width, 0.3)
     e_traj.append(next_state)
     state = next_state
+    #print "next_state", next_state
 
   return e_traj
 
@@ -281,7 +286,6 @@ def match_rate(method, o_traj, e_traj):
     #print "m_rate", m_rate,
     #print "match_count", match_count
 
-
   return m_rate
 
 def tune_rate(iteration, n_iters, m_rate, update_time):
@@ -295,6 +299,18 @@ def tune_rate(iteration, n_iters, m_rate, update_time):
 
   return rate
 
+def make_traj(i_length, candidate):
+  episode = []
+  trajs=[]
+  for i in range(i_length):
+    if(len(candidate) > i):
+      print i
+      episode.append(Step(cur_state=candidate[i], action=0, next_state=candidate[i], reward=0, done=False))
+    else:
+      episode.append(Step(cur_state=48, action=0, next_state=48, reward=0, done=False))
+  trajs.append(episode)
+  #print trajs
+  return trajs
 
 def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   """
@@ -314,7 +330,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     rewards     Nx1 vector - recoverred state rewardsF
   """
 
-  MRATE_THRESHOLD = 0.4
+
+  MRATE_THRESHOLD = 0.6
 
   exp_count = 0
 
@@ -350,11 +367,13 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   for iteration in range(n_iters):
 
     print 'iteration: {}/{}'.format(iteration, n_iters)
-
-    #print trajs
     # compute reward function
     rewards = np.dot(feat_map, theta)
 
+    # compute policy
+    value, policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=False)
+
+    true_value, true_policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=True)
 
     if (iteration % 50 == 0):
       plt.figure(figsize=(20,20))
@@ -364,36 +383,21 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       figname = "results/reward/rewards_{0:%m%d%H%M%S}".format(now) + ".png"
       print(figname)
       plt.savefig(figname)
+
+      plt.figure(figsize=(20,20))
+      img_utils.heatmap2d(np.reshape(value, (H, W), order='F'), 'Value Map', block=False)
+      plt.plot()
+      figname1 = "results/value/value_{0:%m%d%H%M%S}".format(now) + ".png"
+      plt.savefig(figname1)
       #plt.show()
-
-    if(iteration == 126):
-      trajs = tj.re_trajs()
-      for episode in trajs:
-        for step in episode:
-          feat_exp += feat_map[step.cur_state,:]
-      feat_exp = feat_exp/len(trajs)
-      print trajs
-
-    # compute policy
-    value, policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=False)
-
-    true_value, true_policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=True)
-
-    #value3, policy3 = value_iteration.value_iteration(P_a, rewards, gamma, error=0.3, deterministic=True)
-
-    #print "true_policy", true_policy
-    #print "policy3", policy3
 
     # compute new trajectory
 
-    new_trajs = generate_newtrajs(gw, true_policy, n_trajs=100, len_traj=30, rand_start=False)
-
-
+    #new_trajs = generate_newtrajs(gw, true_policy, n_trajs=100, len_traj=30, rand_start=False)
     #opt_traj = get_optimaltrajectory(true_policy,7,7,20)
 
-
     #if terminal == 48
-    candidate = get_trajectory_egreedy(true_policy, 7, 7, 30)
+    candidate = get_trajectory_egreedy(true_policy, 7, 7, 20)
 
     re_candidate = sorted(set(candidate), key=candidate.index)
 
@@ -403,9 +407,10 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     print "candidate   ", candidate
     print "re_candidate", re_candidate
 
-    if (candidate[-1] == 48):
-      e_traj = candidate
-    print "e_traj", e_traj
+    ###if ((46 in re_candidate) or (47 in re_candidate) or (48 in re_candidate)):
+      ###e_traj = re_candidate
+
+    print "e_traj      ", e_traj
 
 
     '''
@@ -439,19 +444,14 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       update_time.append(iteration)
     '''
 
-
-
     #compare epsilon-greedy trajectory
-
-
     m_rate = match_rate('simple',e_traj,exp_traj)
 
     m_threshold = tune_rate(iteration, n_iters, MRATE_THRESHOLD, update_time)
     #print ("m_threshold", m_threshold)
 
-    if((len(exp_traj)-15 > len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj)):
-      print "aaaaaaaaaa"
-      trajs = new_trajs
+    if((len(exp_traj) > len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj) and ((46 in e_traj) or (47 in e_traj) or (48 in e_traj))):
+      trajs = make_traj(20,  e_traj)
       exp_length = len(e_traj)
       exp_count += 1
       for episode in trajs:
@@ -461,9 +461,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       check_opt_traj=e_traj
       exp_traj = e_traj
       update_time.append(iteration)
-      exp_flag = True
 
-    print "exp_traj", exp_traj
+    print "exp_traj    ", exp_traj
 
     print "update_time", update_time
     #print data_stepsize
@@ -517,28 +516,18 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     # compute state visition frequences
     svf = compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=False)
 
-
     # compute gradients
     grad = feat_exp - feat_map.T.dot(svf)
-
-    #if (iteration >= 50):
-      #feat_exp = mod_feat_exp(feat_map, bdtj.bad_trajs())
-      #grad = feat_exp - feat_map.T.dot(svf)
 
     # update params
     theta += lr * grad
 
     rewards = np.dot(feat_map, theta)#policy
 
-    _, check_policy = value_iteration.value_iteration(P_a, rewards, GAMMA, error=0.01, deterministic=True) #policy
-
-    df = pd.DataFrame(check_policy)
-
-    df.T.to_csv('results/policy77.csv',mode='a',index=False, header=False)
+    #_, check_policy = value_iteration.value_iteration(P_a, rewards, GAMMA, error=0.01, deterministic=True) #policy
+    #df = pd.DataFrame(check_policy)
+    #df.T.to_csv('results/policy77.csv',mode='a',index=False, header=False)
 
   rewards = np.dot(feat_map, theta)
 
-  print trajs
-
-  # return sigmoid(normalize(rewards))
   return normalize(rewards)
