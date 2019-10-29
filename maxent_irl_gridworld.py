@@ -112,7 +112,6 @@ def generate_demonstrations(gw, policy, n_trajs=100, len_traj=20, rand_start=Fal
 
 def main():
   N_STATES = H * W
-  N_ACTIONS = 5
 
   """while True:
       print "BAD_STATE入力"

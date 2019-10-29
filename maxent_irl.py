@@ -13,7 +13,6 @@ import numpy as np
 import mdp.gridworld as gridworld
 import mdp.value_iteration as value_iteration
 import img_utils
-from utils import *
 import copy
 import pandas as pd
 import csv
@@ -145,7 +144,7 @@ def e_greedy_direction(state, policy, Width, Height, epsilon):
     if(state == 0):
       randlist = [0,2]
       policy = np.random.choice(randlist)
-    elif(state == 6):
+    elif(state == Height):
       randlist = [0,3]
       policy = np.random.choice(randlist)
     elif(state == 42):
