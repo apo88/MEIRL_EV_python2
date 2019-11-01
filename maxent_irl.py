@@ -13,6 +13,7 @@ import numpy as np
 import mdp.gridworld as gridworld
 import mdp.value_iteration as value_iteration
 import img_utils
+from utils import *
 import copy
 import pandas as pd
 import csv
@@ -251,7 +252,6 @@ def get_optimaltrajectory(policy, Height, Width, Length):
     next_state = optimal_direction(state,policy[state], Height, Width)
     opt_traj.append(next_state)
     state = next_state
-    #print len(opt_traj)
 
   return opt_traj
 
@@ -262,28 +262,19 @@ def get_trajectory_egreedy(policy, Height, Width, Length):
   e_traj.append(0)
 
   while(state != (Height * Width -1) and len(e_traj) < Length and next_state < 49):
-    #print "state", state
-    #print "policy", policy[state]
     next_state = e_greedy_direction(state, policy[state], Height, Width, 0.3)
     e_traj.append(next_state)
     state = next_state
-    #print "next_state", next_state
-
   return e_traj
 
 def match_rate(method, o_traj, e_traj):
   if(method == 'simple'):
     match_state = set(set(o_traj) & set(e_traj))
     m_rate = float(len(match_state)) / float(len(o_traj))
-    #print "match_state", match_state, len(match_state), len(o_traj)
-    #print "m_rate", m_rate
 
   if(method == 'step'):
     match_count = 0
-
     m_rate = float(match_count)/ float(len(o_traj))
-    #print "m_rate", m_rate,
-    #print "match_count", match_count
 
   return m_rate
 
@@ -308,8 +299,13 @@ def make_traj(i_length, candidate):
     else:
       episode.append(Step(cur_state=48, action=0, next_state=48, reward=0, done=False))
   trajs.append(episode)
-  #print trajs
+
   return trajs
+
+def lerninig_time(n_iteration, iteration, expert):
+  goal = []
+  point = n_iteration / 55
+  return goal
 
 def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   """
@@ -357,8 +353,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   #exp_traj = [0, 7, 8, 9, 16, 23 , 22, 21 , 28, 35, 42, 43, 44, 45, 46, 47, 48]
   #e_traj = [0, 7, 8, 9, 16, 23 , 22, 21 , 28, 35, 42, 43, 44, 45, 46, 47, 48]
   exp_length = 21
-  exp_traj = [0, 1, 2, 3, 4, 5, 6, 13, 12, 11, 10, 9, 16, 23, 30, 37, 44, 45, 46, 47, 48]
-  e_traj = [0, 1, 2, 3, 4, 5, 6, 13, 12, 11, 10, 9, 16, 23, 30, 37, 44, 45, 46, 47, 48]
+  exp_traj = [0, 1, 15, 16, 23, 24, 25, 32, 33, 40, 41, 48]
+  e_traj = [0, 1, 15, 16, 23, 24, 25, 32, 33, 40, 41, 48]
 
   select_candidate = []
 
@@ -372,7 +368,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     # compute policy
     value, policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=False)
 
-    true_value, true_policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=True)
+    _, true_policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=True)
 
     if (iteration % 50 == 0):
       plt.figure(figsize=(20,20))
@@ -405,10 +401,6 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     print "candidate   ", candidate
     print "re_candidate", re_candidate
-
-    ###if ((46 in re_candidate) or (47 in re_candidate) or (48 in re_candidate)):
-      ###e_traj = re_candidate
-
     print "e_traj      ", e_traj
 
 
@@ -423,10 +415,6 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       feat_exp = feat_exp/len(trajs)
       check_opt_traj=opt_traj
     '''
-
-    #print "exp_count", exp_count
-
-
     #compare optimal trajectory
     '''
     m_rate = match_rate('simple',opt_traj,exp_traj)
@@ -449,7 +437,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     m_threshold = tune_rate(iteration, n_iters, MRATE_THRESHOLD, update_time)
     #print ("m_threshold", m_threshold)
 
-    if((len(exp_traj) > len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj) and ((46 in e_traj) or (47 in e_traj) or (48 in e_traj))):
+    if((len(exp_traj) > len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj) and ((40 in e_traj) or (41 in e_traj) or (48 in e_traj))):
       trajs = make_traj(20,  e_traj)
       exp_length = len(e_traj)
       exp_count += 1
@@ -462,9 +450,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       update_time.append(iteration)
 
     print "exp_traj    ", exp_traj
-
     print "update_time", update_time
-    #print data_stepsize
+
     data_stepsize.append(len(check_opt_traj))
 
     with open('results/step_size.csv', 'a')  as f:
@@ -528,5 +515,4 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     #df.T.to_csv('results/policy77.csv',mode='a',index=False, header=False)
 
   rewards = np.dot(feat_map, theta)
-
   return normalize(rewards)
