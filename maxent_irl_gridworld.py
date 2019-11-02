@@ -135,7 +135,7 @@ def main():
   rewards_gt = np.reshape(rmap_gt, H*W, order='F')
   P_a = gw.get_transition_mat()
 
-  values_gt, policy_gt = value_iteration.value_iteration(P_a, rewards_gt, GAMMA, error=0.01, deterministic=True)
+  #values_gt, policy_gt = value_iteration.value_iteration(P_a, rewards_gt, GAMMA, error=0.01, deterministic=True)
 
   # use identity matrix as feature
   feat_map = np.eye(N_STATES)
@@ -158,7 +158,7 @@ def main():
 
   np.savetxt('results/rewards.txt', rewards)
 
-  values, policy = value_iteration.value_iteration(P_a, rewards, GAMMA, error=0.01, deterministic=True)
+  #values, policy = value_iteration.value_iteration(P_a, rewards, GAMMA, error=0.01, deterministic=True)
 
 
   # plots
@@ -167,7 +167,6 @@ def main():
   plt.plot()
   now = datetime.datetime.now()
   figname = "results/rewards_{0:%m%d%H%M}".format(now) + ".png"
-  print(figname)
   plt.savefig(figname)
   plt.show()
   #plt.figure(figsize=(20,20))

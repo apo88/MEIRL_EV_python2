@@ -352,9 +352,9 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   #exp_traj = [0, 7, 14, 15, 22, 29, 28, 35, 42, 43, 44, 45, 46, 47, 48]
   #exp_traj = [0, 7, 8, 9, 16, 23 , 22, 21 , 28, 35, 42, 43, 44, 45, 46, 47, 48]
   #e_traj = [0, 7, 8, 9, 16, 23 , 22, 21 , 28, 35, 42, 43, 44, 45, 46, 47, 48]
-  exp_length = 21
-  exp_traj = [0, 1, 15, 16, 23, 24, 25, 32, 33, 40, 41, 48]
-  e_traj = [0, 1, 15, 16, 23, 24, 25, 32, 33, 40, 41, 48]
+  #exp_length = 21
+  exp_traj = [0, 1, 15, 32, 33, 40, 41, 48]
+  e_traj = [0, 1, 15, 32, 33, 40, 41, 48]
 
   select_candidate = []
 
@@ -376,7 +376,6 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       plt.plot()
       now = datetime.datetime.now()
       figname = "results/reward/rewards_{0:%m%d%H%M%S}".format(now) + ".png"
-      print(figname)
       plt.savefig(figname)
 
       plt.figure(figsize=(20,20))
@@ -439,7 +438,6 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     if((len(exp_traj) > len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj) and ((40 in e_traj) or (41 in e_traj) or (48 in e_traj))):
       trajs = make_traj(20,  e_traj)
-      exp_length = len(e_traj)
       exp_count += 1
       for episode in trajs:
         for step in episode:
