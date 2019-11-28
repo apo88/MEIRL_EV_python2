@@ -23,7 +23,7 @@ PARSER.add_argument('--rand_start', dest='rand_start', action='store_true', help
 PARSER.add_argument('--no-rand_start', dest='rand_start',action='store_false', help='when sampling trajectories, fix start positions')
 PARSER.set_defaults(rand_start=False)
 PARSER.add_argument('-lr', '--learning_rate', default=0.01, type=float, help='learning rate')
-PARSER.add_argument('-ni', '--n_iters', default=500, type=int, help='number of iterations')
+PARSER.add_argument('-ni', '--n_iters', default=1000, type=int, help='number of iterations')
 PARSER.add_argument('-rg', '--r_gamma', default=0.3, type=float, help='discount factor for rewards')
 PARSER.add_argument('-bx', '--bad_x', default= 0, type=int, help='bad state of x orign')
 PARSER.add_argument('-by', '--bad_y', default= 4, type=int, help='bad state of y orign')
@@ -113,19 +113,10 @@ def generate_demonstrations(gw, policy, n_trajs=100, len_traj=20, rand_start=Fal
 def main():
   N_STATES = H * W
 
-  """while True:
-      print "BAD_STATE入力"
-      bad = raw_input('>> ')
-      if bad == 'ok':
-          break
-      Bad_states.append(bad)
-  """
-
   # init the gridworld
   # rmap_gt is the ground truth for rewards
   rmap_gt = np.zeros([H, W])
 
-  #print R_MAX
   #goal coordinates
   rmap_gt[H-1, W-1] = R_MAX
   # rmap_gt[H-1, 0] = R_MAX
@@ -151,8 +142,10 @@ def main():
 
   #trajs = mod.init_trajs()
 
-  trajs = mod.before_defect_trajs()
-  trajs = mod.defect_trajs()
+  #trajs = mod.before_defect_trajs()
+  #trajs = mod.defect_trajs()
+
+  trajs = mod.init_badtrajs1202_2()
 
   rewards = maxent_irl(gw, feat_map, P_a, GAMMA, trajs, LEARNING_RATE, N_ITERS)
 

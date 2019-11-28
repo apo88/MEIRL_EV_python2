@@ -294,18 +294,12 @@ def make_traj(i_length, candidate):
   trajs=[]
   for i in range(i_length):
     if(len(candidate) > i):
-      print i
       episode.append(Step(cur_state=candidate[i], action=0, next_state=candidate[i], reward=0, done=False))
     else:
       episode.append(Step(cur_state=48, action=0, next_state=48, reward=0, done=False))
   trajs.append(episode)
 
   return trajs
-
-def lerninig_time(n_iteration, iteration, expert):
-  goal = []
-  point = n_iteration / 55
-  return goal
 
 def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   """
@@ -348,13 +342,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
   data_stepsize = []
 
-
-  #exp_traj = [0, 7, 14, 15, 22, 29, 28, 35, 42, 43, 44, 45, 46, 47, 48]
-  #exp_traj = [0, 7, 8, 9, 16, 23 , 22, 21 , 28, 35, 42, 43, 44, 45, 46, 47, 48]
-  #e_traj = [0, 7, 8, 9, 16, 23 , 22, 21 , 28, 35, 42, 43, 44, 45, 46, 47, 48]
-  #exp_length = 21
-  exp_traj = [0, 1, 15, 32, 33, 40, 41, 48]
-  e_traj = [0, 1, 15, 32, 33, 40, 41, 48]
+  exp_traj = [0,1,2,3,4,5,6,13,20,27,26,25,24,23,30,37,44,45,46,47,48]
+  e_traj = [0,1,2,3,4,5,6,13,20,27,26,25,24,23,30,37,44,45,46,47,48]
 
   select_candidate = []
 
@@ -366,10 +355,11 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     rewards = np.dot(feat_map, theta)
 
     # compute policy
-    value, policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=False)
+    _, policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=False)
 
     _, true_policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=True)
 
+    '''
     if (iteration % 50 == 0):
       plt.figure(figsize=(20,20))
       img_utils.heatmap2d(np.reshape(rewards, (H,W), order='F'), 'Reward Map', block=False)
@@ -384,6 +374,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       figname1 = "results/value/value_{0:%m%d%H%M%S}".format(now) + ".png"
       plt.savefig(figname1)
       #plt.show()
+    '''
 
     # compute new trajectory
 
@@ -395,6 +386,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     re_candidate = sorted(set(candidate), key=candidate.index)
 
+    e_traj = copy.deepcopy(re_candidate)
+
     if exp_traj[-2] in re_candidate:
       select_candidate = copy.deepcopy(re_candidate)
 
@@ -402,41 +395,34 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     print "re_candidate", re_candidate
     print "e_traj      ", e_traj
 
-
-    '''
-    if((exp_length >= len(opt_traj)-1) and (opt_traj != check_opt_traj)):
-      trajs = new_trajs
-      exp_length = len(opt_traj)
-      exp_count += 1
-      for episode in trajs:
-        for step in episode:
-          feat_exp += feat_map[step.cur_state,:]
-      feat_exp = feat_exp/len(trajs)
-      check_opt_traj=opt_traj
-    '''
-    #compare optimal trajectory
-    '''
-    m_rate = match_rate('simple',opt_traj,exp_traj)
-
-    if((exp_length >= len(opt_traj)-1) and (m_rate >= MRATE_THRESHOLD) and (opt_traj != check_opt_traj)):
-      trajs = new_trajs
-      exp_length = len(opt_traj)
-      exp_count += 1
-      for episode in trajs:
-        for step in episode:
-          feat_exp += feat_map[step.cur_state,:]
-      feat_exp = feat_exp/len(trajs)
-      check_opt_traj=opt_traj
-      update_time.append(iteration)
-    '''
-
     #compare epsilon-greedy trajectory
     m_rate = match_rate('simple',e_traj,exp_traj)
 
-    m_threshold = tune_rate(iteration, n_iters, MRATE_THRESHOLD, update_time)
+    #m_threshold = tune_rate(iteration, n_iters, MRATE_THRESHOLD, update_time)
     #print ("m_threshold", m_threshold)
 
-    if((len(exp_traj) > len(e_traj)) and (m_rate >= m_threshold) and (e_traj != check_opt_traj) and ((40 in e_traj) or (41 in e_traj) or (48 in e_traj))):
+    '''
+    if(iteration == 101):
+      trajs = tj.defeat_badtrajs()
+      for episode in trajs:
+        for step in episode:
+          feat_exp += feat_map[step.cur_state,:]
+      feat_exp = feat_exp/len(trajs)
+      update_time.append(iteration)
+    '''
+
+
+    if(len(exp_traj) >= len(e_traj)):
+      print "OK1"
+    if(check_opt_traj != e_traj):
+      print "OK2"
+    if(m_rate >= MRATE_THRESHOLD):
+      print "OK3"
+    if(48 in e_traj):
+      print "OK4"
+
+
+    if((len(exp_traj) > len(e_traj)) and ((check_opt_traj != e_traj)) and (m_rate >= MRATE_THRESHOLD) and ((48 in e_traj))):
       trajs = make_traj(20,  e_traj)
       exp_count += 1
       for episode in trajs:
@@ -446,6 +432,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       check_opt_traj=e_traj
       exp_traj = e_traj
       update_time.append(iteration)
+
 
     print "exp_traj    ", exp_traj
     print "update_time", update_time
@@ -459,6 +446,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       f.write('\n')
       f.close
 
+    '''
     with open('results/expert.csv', 'a')  as f:
       f.write(str(iteration))
       f.write(",")
@@ -467,6 +455,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
         f.write(",")
       f.write('\n')
       f.close
+    '''
 
     with open('results/candidate.csv', 'a')  as f:
       f.write(str(iteration))
@@ -486,6 +475,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       f.write('\n')
       f.close
 
+    '''
     with open('results/select_candidate.csv', 'a')  as f:
       f.write(str(iteration))
       f.write(",")
@@ -494,6 +484,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
         f.write(",")
       f.write('\n')
       f.close
+    '''
 
     select_candidate = []
 
@@ -508,9 +499,12 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     rewards = np.dot(feat_map, theta)#policy
 
+    rewards[0] = 0
+
     #_, check_policy = value_iteration.value_iteration(P_a, rewards, GAMMA, error=0.01, deterministic=True) #policy
     #df = pd.DataFrame(check_policy)
     #df.T.to_csv('results/policy77.csv',mode='a',index=False, header=False)
 
   rewards = np.dot(feat_map, theta)
+  rewards[0] = 0
   return normalize(rewards)
