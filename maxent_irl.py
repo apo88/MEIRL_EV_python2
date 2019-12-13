@@ -342,8 +342,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
   data_stepsize = []
 
-  exp_traj = [0,1,2,3,4,5,6,13,20,27,26,25,24,23,30,37,44,45,46,47,48]
-  e_traj = [0,1,2,3,4,5,6,13,20,27,26,25,24,23,30,37,44,45,46,47,48]
+  exp_traj = [0,1,2,9,16,15,22,29,30,31,24,25,26,27,34,41,48]
+  e_traj = [0,1,2,9,16,15,22,29,30,31,24,25,26,27,34,41,48]
 
   select_candidate = []
 
@@ -411,18 +411,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       update_time.append(iteration)
     '''
 
-
-    if(len(exp_traj) >= len(e_traj)):
-      print "OK1"
-    if(check_opt_traj != e_traj):
-      print "OK2"
-    if(m_rate >= MRATE_THRESHOLD):
-      print "OK3"
-    if(48 in e_traj):
-      print "OK4"
-
-
-    if((len(exp_traj) > len(e_traj)) and ((check_opt_traj != e_traj)) and (m_rate >= MRATE_THRESHOLD) and ((48 in e_traj))):
+    '''
+    if((len(exp_traj) >= len(e_traj)) and ((check_opt_traj != e_traj)) and (m_rate >= MRATE_THRESHOLD) and ((48 in e_traj))):
       trajs = make_traj(20,  e_traj)
       exp_count += 1
       for episode in trajs:
@@ -432,6 +422,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       check_opt_traj=e_traj
       exp_traj = e_traj
       update_time.append(iteration)
+    '''
 
 
     print "exp_traj    ", exp_traj
@@ -499,12 +490,9 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     rewards = np.dot(feat_map, theta)#policy
 
-    rewards[0] = 0
-
     #_, check_policy = value_iteration.value_iteration(P_a, rewards, GAMMA, error=0.01, deterministic=True) #policy
     #df = pd.DataFrame(check_policy)
     #df.T.to_csv('results/policy77.csv',mode='a',index=False, header=False)
 
   rewards = np.dot(feat_map, theta)
-  rewards[0] = 0
   return normalize(rewards)

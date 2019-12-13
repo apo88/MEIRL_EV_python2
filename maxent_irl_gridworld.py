@@ -145,7 +145,7 @@ def main():
   #trajs = mod.before_defect_trajs()
   #trajs = mod.defect_trajs()
 
-  trajs = mod.init_badtrajs1202_2()
+  trajs = mod.init_correct_trajs1202_2()
 
   rewards = maxent_irl(gw, feat_map, P_a, GAMMA, trajs, LEARNING_RATE, N_ITERS)
 
