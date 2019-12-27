@@ -66,6 +66,7 @@ def compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=True):
       else:
         mu[s, t+1] = sum([sum([mu[pre_s, t]*P_a[pre_s, s, a1]*policy[pre_s, a1] for a1 in range(N_ACTIONS)]) for pre_s in range(N_STATES)])
 
+  #print mu
   p = np.sum(mu, 1)
   return p
 
@@ -356,8 +357,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     # compute policy
     _, policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=False)
-
     _, true_policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=True)
+
 
     '''
     if (iteration % 50 == 0):
