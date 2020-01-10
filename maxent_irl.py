@@ -58,9 +58,8 @@ def compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=True):
 
 
   mu[:,0] = mu[:,0]/len(trajs)
-
-  for s in range(N_STATES):
-    for t in range(T-1):
+  for t in range(T-1):
+    for s in range(N_STATES):
       if deterministic:
         mu[s, t+1] = sum([mu[pre_s, t]*P_a[pre_s, s, int(policy[pre_s])] for pre_s in range(N_STATES)])
       else:
@@ -302,6 +301,15 @@ def make_traj(i_length, candidate):
 
   return trajs
 
+def min_max(x, axis=None):
+    min = x.min(axis=axis, keepdims=True)
+    max = x.max(axis=axis, keepdims=True)
+    a = x-min
+    result = float(a)/(max-min)
+    return result
+
+
+
 def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   """
   Maximum Entropy Inverse Reinforcement Learning (Maxent IRL)
@@ -322,8 +330,11 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
 
   MRATE_THRESHOLD = 0.6
-
   exp_count = 0
+
+  # state number
+  state_num = np.array([i+1 for i in range(H*W)])
+  statecount = np.zeros(H*W,dtype=float)
 
   # init parameters
   theta = np.random.uniform(size=(feat_map.shape[1],))
@@ -358,7 +369,6 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     # compute policy
     _, policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=False)
     _, true_policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=True)
-
 
     '''
     if (iteration % 50 == 0):
@@ -395,6 +405,18 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
     print "candidate   ", candidate
     print "re_candidate", re_candidate
     print "e_traj      ", e_traj
+    for t in range(len(re_candidate)-1):
+        statecount[re_candidate[t+1]] +=1
+    if(iteration % 100 ==0):
+      left = state_num
+      height = statecount
+      minmax_h = min_max(height)
+      print height
+      print minmax_h
+      #plt.bar(left,height)
+      plt.bar(left,minmax_h)
+      plt.show()
+      statecount = np.zeros(H*W,dtype=int)
 
     #compare epsilon-greedy trajectory
     m_rate = match_rate('simple',e_traj,exp_traj)
@@ -412,6 +434,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       update_time.append(iteration)
     '''
 
+
     '''
     if((len(exp_traj) >= len(e_traj)) and ((check_opt_traj != e_traj)) and (m_rate >= MRATE_THRESHOLD) and ((48 in e_traj))):
       trajs = make_traj(20,  e_traj)
@@ -424,8 +447,6 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       exp_traj = e_traj
       update_time.append(iteration)
     '''
-
-
     print "exp_traj    ", exp_traj
     print "update_time", update_time
 

@@ -126,7 +126,7 @@ def main():
   rewards_gt = np.reshape(rmap_gt, H*W, order='F')
   P_a = gw.get_transition_mat()
 
-  #values_gt, policy_gt = value_iteration.value_iteration(P_a, rewards_gt, GAMMA, error=0.01, deterministic=True)
+  values_gt, policy_gt = value_iteration.value_iteration(P_a, rewards_gt, GAMMA, error=0.01, deterministic=True)
 
   # use identity matrix as feature
   feat_map = np.eye(N_STATES)
@@ -135,17 +135,17 @@ def main():
   # the following two features might not work as well as the identity.
   # feat_map = feature_basis(gw)
   # feat_map = feature_coord(gw)
-  np.random.seed(0)
+  np.random.seed(2)
 
 
   #trajs = generate_demonstrations(gw, policy_gt, n_trajs=N_TRAJS, len_traj=L_TRAJ, rand_start=RAND_START)
 
   #trajs = mod.init_trajs()
 
-  #trajs = mod.before_defect_trajs()
+  trajs = mod.before_defect_trajs()
   #trajs = mod.defect_trajs()
 
-  trajs = mod.init_correct_trajs1202_2()
+  #trajs = mod.init_correct_trajs1202_2()
 
   rewards = maxent_irl(gw, feat_map, P_a, GAMMA, trajs, LEARNING_RATE, N_ITERS)
 
