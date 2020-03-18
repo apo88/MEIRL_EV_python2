@@ -21,6 +21,7 @@ import mod_trajectory as tj
 import bad_trajectory as bdtj
 import matplotlib.pyplot as plt
 import datetime
+from tqdm import tqdm
 
 
 R_DISCOUNT = 0.1
@@ -65,7 +66,6 @@ def compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=True):
       else:
         mu[s, t+1] = sum([sum([mu[pre_s, t]*P_a[pre_s, s, a1]*policy[pre_s, a1] for a1 in range(N_ACTIONS)]) for pre_s in range(N_STATES)])
 
-  #print mu
   p = np.sum(mu, 1)
   return p
 
@@ -172,6 +172,8 @@ def e_greedy_direction(state, policy, Width, Height, epsilon):
   else:
     #print "not_random"
     policy = policy
+
+    #print policy
 
   if(int(policy) == 0):
     if(state==42):
@@ -305,7 +307,7 @@ def min_max(x, axis=None):
     min = x.min(axis=axis, keepdims=True)
     max = x.max(axis=axis, keepdims=True)
     a = x-min
-    result = float(a)/(max-min)
+    result = a.astype('float')/(max-min)
     return result
 
 
@@ -327,10 +329,11 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
   returns
     rewards     Nx1 vector - recoverred state rewardsF
   """
-
-
-  MRATE_THRESHOLD = 0.6
+  MRATE_THRESHOLD = 0.9
   exp_count = 0
+
+  SLIDESIZE = 100
+
 
   # state number
   state_num = np.array([i+1 for i in range(H*W)])
@@ -347,31 +350,84 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       feat_exp += feat_map[step.cur_state,:]
   feat_exp = feat_exp/len(trajs)
 
-
   check_opt_traj =[]
 
   update_time = []
 
   data_stepsize = []
 
-  exp_traj = [0,1,2,9,16,15,22,29,30,31,24,25,26,27,34,41,48]
-  e_traj = [0,1,2,9,16,15,22,29,30,31,24,25,26,27,34,41,48]
+  #case2
+  
+  exp_traj = [0,1,2,3,4,5,6,13,20,19,18,17,24,31,38,45,46,47,48]
+  e_traj = [0,1,2,3,4,5,6,13,20,19,18,17,24,31,38,45,46,47,48]
+  
+
+  #case1
+  """
+  exp_traj = [0,7,14,15,22,29,28,35,42,43,44,45,46,47,48]
+  e_traj = [0,7,14,15,22,29,28,35,42,43,44,45,46,47,48]
+  """
+
+  #case3
+  """
+  exp_traj = [0,1,8,15,22,31,32,33,40,41,48]
+  e_traj = [0,1,8,15,22,31,32,33,40,41,48]
+  """
+  #case3 new
+  """
+  exp_traj = [0,1,8,15,22,23, 24, 31,32,33,40,41,48]
+  e_traj = [0,1,8,15,22,23,24,31,32,33,40,41,48]
+  """
+
+  #case4
+  """
+  exp_traj = [0,1,8,15,14,21,28,29,30,31,32,33,40,41,48]
+  e_traj =[0,1,8,15,14,21,28,29,30,31,32,33,40,41,48]
+  """
+
+  #exp3
+  """
+  exp_traj = [0,1,2,3,4,5,6,13,20,27,26,25,24,31,38,45,46,47,48]
+  e_traj = [0,1,2,3,4,5,6,13,20,27,26,25,24,31,38,45,46,47,48]
+  """
+
+  #exp3 case1
+  """
+  exp_traj = [0,1,2,3,4,5,6,13,12,11,10,9,16,23,30,37,44,45,46,47,48]
+  e_traj = [0,1,2,3,4,5,6,13,12,11,10,9,16,23,30,37,44,45,46,47,48]
+  """
+
+  #exp3 case2
+  """
+  exp_traj=[0,1,8,15,14,21,28,29,30,31,24,17, 10, 11, 12, 19,26,33,40,47,48]
+  e_traj=[0,1,8,15,14,21,28,29,30,31,24,17, 10, 11, 12, 19,26,33,40,47,48]
+  """
+
+  #exp3 case2 new
+  """
+  exp_traj=[0,1,8,15,14,21,28,29,30,31,24,17, 10, 11,12, 13, 20 ,27,34,41,48]
+  e_traj=[0,1,8,15,14,21,28,29,30,31,24,17,10,11,12,13,20,27,34,41,48]
+  """
 
   select_candidate = []
 
-  # training
-  for iteration in range(n_iters):
+  maxstate = 0
+  overstate =[]
 
-    print 'iteration: {}/{}'.format(iteration, n_iters)
+  # training
+  for iteration in tqdm(range(n_iters)):
+
+    #print 'iteration: {}/{}'.format(iteration, n_iters)
     # compute reward function
-    rewards = np.dot(feat_map, theta)
+    if(iteration == 0):
+      rewards = np.dot(feat_map, theta)
 
     # compute policy
     _, policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=False)
     _, true_policy = value_iteration.value_iteration(P_a, rewards, gamma, error=0.01, deterministic=True)
 
-    '''
-    if (iteration % 50 == 0):
+    """
+    if (iteration % 150 == 0):
       plt.figure(figsize=(20,20))
       img_utils.heatmap2d(np.reshape(rewards, (H,W), order='F'), 'Reward Map', block=False)
       plt.plot()
@@ -385,7 +441,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       figname1 = "results/value/value_{0:%m%d%H%M%S}".format(now) + ".png"
       plt.savefig(figname1)
       #plt.show()
-    '''
+    """
 
     # compute new trajectory
 
@@ -401,44 +457,23 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     if exp_traj[-2] in re_candidate:
       select_candidate = copy.deepcopy(re_candidate)
-
+    print " "
     print "candidate   ", candidate
     print "re_candidate", re_candidate
-    print "e_traj      ", e_traj
-    for t in range(len(re_candidate)-1):
-        statecount[re_candidate[t+1]] +=1
-    if(iteration % 100 ==0):
-      left = state_num
-      height = statecount
-      minmax_h = min_max(height)
-      print height
-      print minmax_h
-      #plt.bar(left,height)
-      plt.bar(left,minmax_h)
-      plt.show()
-      statecount = np.zeros(H*W,dtype=int)
+    print "exp_traj    ", exp_traj
 
     #compare epsilon-greedy trajectory
     m_rate = match_rate('simple',e_traj,exp_traj)
 
+    print m_rate
+
     #m_threshold = tune_rate(iteration, n_iters, MRATE_THRESHOLD, update_time)
     #print ("m_threshold", m_threshold)
 
-    '''
-    if(iteration == 101):
-      trajs = tj.defeat_badtrajs()
-      for episode in trajs:
-        for step in episode:
-          feat_exp += feat_map[step.cur_state,:]
-      feat_exp = feat_exp/len(trajs)
-      update_time.append(iteration)
-    '''
-
-
-    '''
-    if((len(exp_traj) >= len(e_traj)) and ((check_opt_traj != e_traj)) and (m_rate >= MRATE_THRESHOLD) and ((48 in e_traj))):
+    if((len(exp_traj) > len(e_traj)) and ((check_opt_traj != e_traj)) and (m_rate >= MRATE_THRESHOLD) and ((48 in e_traj))):
       trajs = make_traj(20,  e_traj)
       exp_count += 1
+      feat_exp = np.zeros([feat_map.shape[1]])
       for episode in trajs:
         for step in episode:
           feat_exp += feat_map[step.cur_state,:]
@@ -446,19 +481,36 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       check_opt_traj=e_traj
       exp_traj = e_traj
       update_time.append(iteration)
-    '''
-    print "exp_traj    ", exp_traj
+
+
+    """
+    if(iteration == 100):
+      trajs = tj.exp1_case3_correct()
+      exp_count += 1
+      feat_exp = np.zeros([feat_map.shape[1]])
+      for episode in trajs:
+        for step in episode:
+          feat_exp += feat_map[step.cur_state,:]
+      feat_exp = feat_exp/len(trajs)
+      check_opt_traj= [0,1,8,15,16,23,24,31,32,33,40,41,48]
+      exp_traj =  [0,1,8,15,16,23,24,31,32,33,40,41,48]
+      update_time.append(iteration)
+    """
+
+
+    #print "exp_traj    ", exp_traj
     print "update_time", update_time
 
     data_stepsize.append(len(check_opt_traj))
 
+    '''
     with open('results/step_size.csv', 'a')  as f:
       f.write(str(iteration))
       f.write(",")
       f.write(str(data_stepsize[iteration]))
       f.write('\n')
       f.close
-
+    '''
     '''
     with open('results/expert.csv', 'a')  as f:
       f.write(str(iteration))
@@ -469,7 +521,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       f.write('\n')
       f.close
     '''
-
+    '''
     with open('results/candidate.csv', 'a')  as f:
       f.write(str(iteration))
       f.write(",")
@@ -478,7 +530,8 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
         f.write(",")
       f.write('\n')
       f.close
-
+    '''
+    '''
     with open('results/re_candidate.csv', 'a')  as f:
       f.write(str(iteration))
       f.write(",")
@@ -487,7 +540,7 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
         f.write(",")
       f.write('\n')
       f.close
-
+    '''
     '''
     with open('results/select_candidate.csv', 'a')  as f:
       f.write(str(iteration))
@@ -498,8 +551,6 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
       f.write('\n')
       f.close
     '''
-
-    select_candidate = []
 
     # compute state visition frequences
     svf = compute_state_visition_freq(P_a, gamma, trajs, policy, deterministic=False)
@@ -512,9 +563,35 @@ def maxent_irl(gw, feat_map, P_a, gamma, trajs, lr, n_iters):
 
     rewards = np.dot(feat_map, theta)#policy
 
-    #_, check_policy = value_iteration.value_iteration(P_a, rewards, GAMMA, error=0.01, deterministic=True) #policy
-    #df = pd.DataFrame(check_policy)
-    #df.T.to_csv('results/policy77.csv',mode='a',index=False, header=False)
+    rewards = normalize(rewards)
+
+    for t in range(len(candidate)):
+      statecount[candidate[t]] +=1
+
+    
+    if(iteration % SLIDESIZE ==0 and iteration != 0):
+      fig = plt.figure()
+      left = state_num
+      height = statecount
+      # minmax_h = min_max(height)
+      plt.bar(left,height,color="#FF5B70")
+      plt.title("iteration{0}".format(iteration))
+      plt.savefig('results/statecount{0}'.format(iteration) + '.png')
+      print height
+
+      overstate = theta
+      for i in range(len(height)):
+        if(height[i] > SLIDESIZE + 50):
+          overstate[i] = 0.0
+          print "overstate{0}".format(i)
+      statecount = np.zeros(H*W,dtype=int)
+
+    if(iteration > SLIDESIZE):
+      theta = overstate
+    
+
+
 
   rewards = np.dot(feat_map, theta)
+  #return rewards
   return normalize(rewards)

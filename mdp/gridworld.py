@@ -8,7 +8,6 @@
 
 import numpy as np
 
-
 class GridWorld(object):
   """
   Grid world environment
@@ -164,7 +163,6 @@ class GridWorld(object):
           nei_s = (state[0] + inc[0], state[1] + inc[1])
           res.append((nei_s, mov_probs[a]))
       return res
-
 
   def is_terminal(self, state):
     """

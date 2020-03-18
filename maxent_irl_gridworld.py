@@ -9,6 +9,7 @@ from mdp import value_iteration
 from maxent_irl import *
 import mod_trajectory as mod
 import datetime
+from tqdm import tqdm
 
 Step = namedtuple('Step','cur_state action next_state reward done')
 
@@ -44,9 +45,7 @@ R_GAMMA = ARGS.r_gamma
 BAD_X = ARGS.bad_x
 BAD_Y = ARGS.bad_y
 BAD_STATE = ARGS.bad_state
-
 Bad_states = list()
-
 
 def feature_coord(gw):
   N = gw.height * gw.width
@@ -74,7 +73,6 @@ def feature_basis(gw):
         feat[i, gw.pos2idx([y, x])] = abs(iy-y) + abs(ix-x)
   return feat
 
-
 def generate_demonstrations(gw, policy, n_trajs=100, len_traj=20, rand_start=False, start_pos=[0,0]):
   """gatheres expert demonstrations
 
@@ -87,7 +85,6 @@ def generate_demonstrations(gw, policy, n_trajs=100, len_traj=20, rand_start=Fal
   returns:
   trajs       a list of trajectories - each element in the list is a list of Steps representing an episode
   """
-
   trajs = []
   for i in range(n_trajs):
     if rand_start:
@@ -108,69 +105,44 @@ def generate_demonstrations(gw, policy, n_trajs=100, len_traj=20, rand_start=Fal
     trajs.append(episode)
   return trajs
 
-
-
 def main():
-  N_STATES = H * W
+  for seed in range(1):
+    N_STATES = H*W
+    # init the gridworld
+    # rmap_gt is the ground truth for rewards
+    rmap_gt = np.zeros([H, W])
+    #goal coordinates
+    rmap_gt[H-1, W-1] = R_MAX
+    gw = gridworld.GridWorld(rmap_gt, {}, 1 - ACT_RAND)
+    rewards_gt = np.reshape(rmap_gt, H*W, order='F')
+    P_a = gw.get_transition_mat()
+    values_gt, policy_gt = value_iteration.value_iteration(P_a, rewards_gt, GAMMA, error=0.01, deterministic=True)
 
-  # init the gridworld
-  # rmap_gt is the ground truth for rewards
-  rmap_gt = np.zeros([H, W])
+    # use identity matrix as feature
+    feat_map = np.eye(N_STATES)
 
-  #goal coordinates
-  rmap_gt[H-1, W-1] = R_MAX
-  # rmap_gt[H-1, 0] = R_MAX
+    # other two features. due to the linear nature,
+    # the following two features might not work as well as the identity.
+    # feat_map = feature_basis(gw)
+    # feat_map = feature_coord(gw)
+    np.random.seed(0)
+    #trajs = generate_demonstrations(gw, policy_gt, n_trajs=N_TRAJS, len_traj=L_TRAJ, rand_start=RAND_START)
 
-  gw = gridworld.GridWorld(rmap_gt, {}, 1 - ACT_RAND)
+    trajs =mod.exp1_case2()
+    rewards = maxent_irl(gw, feat_map, P_a, GAMMA, trajs, LEARNING_RATE, N_ITERS)
 
-  rewards_gt = np.reshape(rmap_gt, H*W, order='F')
-  P_a = gw.get_transition_mat()
+    #np.savetxt('results/rewards.txt', rewards)
 
-  values_gt, policy_gt = value_iteration.value_iteration(P_a, rewards_gt, GAMMA, error=0.01, deterministic=True)
-
-  # use identity matrix as feature
-  feat_map = np.eye(N_STATES)
-
-  # other two features. due to the linear nature,
-  # the following two features might not work as well as the identity.
-  # feat_map = feature_basis(gw)
-  # feat_map = feature_coord(gw)
-  np.random.seed(2)
-
-
-  #trajs = generate_demonstrations(gw, policy_gt, n_trajs=N_TRAJS, len_traj=L_TRAJ, rand_start=RAND_START)
-
-  #trajs = mod.init_trajs()
-
-  trajs = mod.before_defect_trajs()
-  #trajs = mod.defect_trajs()
-
-  #trajs = mod.init_correct_trajs1202_2()
-
-  rewards = maxent_irl(gw, feat_map, P_a, GAMMA, trajs, LEARNING_RATE, N_ITERS)
-
-  np.savetxt('results/rewards.txt', rewards)
-
-  #values, policy = value_iteration.value_iteration(P_a, rewards, GAMMA, error=0.01, deterministic=True)
-
-
-  # plots
-  plt.figure(figsize=(20,20))
-  img_utils.heatmap2d(np.reshape(rewards, (H,W), order='F'), 'Reward Map', block=False)
-  plt.plot()
-  now = datetime.datetime.now()
-  figname = "results/rewards_{0:%m%d%H%M}".format(now) + ".png"
-  plt.savefig(figname)
-  plt.show()
-  #plt.figure(figsize=(20,20))
-  #img_utils.heatmap2d(np.reshape(values, (H,W), order='F'), 'Policy Map', block=False)
-  #plt.plot()
-  #plt.show()
-
-
-  # plt.subplot(2, 2, 4)
-  # img_utils.heatmap3d(np.reshape(rewards, (H,W), order='F'), 'Reward Map - Recovered', block=False)
-
+    #values, policy = value_iteration.value_iteration(P_a, rewards, GAMMA, error=0.01, deterministic=True)
+    # plots
+    plt.figure(figsize=(20,20))
+    img_utils.heatmap2d(np.reshape(rewards, (H,W), order='F'), 'Reward Map', block=False)
+    plt.plot()
+    #now = datetime.datetime.now()
+    #figname = "results/rewards_{0:%m%d%H%M}".format(now) + ".png"
+    figname = "results/rewards_seed{0}".format(seed) + ".png"
+    plt.savefig(figname)
+    #plt.show()
 
 if __name__ == "__main__":
   main()
